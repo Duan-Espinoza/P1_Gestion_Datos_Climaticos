@@ -2,8 +2,11 @@
 //Gestor de datos climáticos
 //Estudiantes:
 //Duan Espinoza
-
+//Andy Cruz
+#include "headers/gestion_datos_climaticos.h"
 #include <stdio.h>
+#include <ctype.h>
+
 
 // Función para mostrar el menú y obtener la opción del usuario
 int mostrarMenu() {
@@ -24,6 +27,7 @@ int mostrarMenu() {
 }
 
 int main() {
+    
     int opcion;
     do {
         opcion = mostrarMenu();
@@ -34,6 +38,7 @@ int main() {
                 break;
             case 2:
                 printf("Ha seleccionado Gestion de datos climaticos\n");
+                gestionDatosClimaticos();
                 // Aquí puedes llamar a la función correspondiente en tu archivo de header
                 break;
             case 3:

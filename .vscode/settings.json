@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "stdio.h": "c",
+        "gestion_datos_climaticos.h": "c",
+        "ctype.h": "c"
+    }
+}
