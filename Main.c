@@ -4,6 +4,7 @@
 //Duan Espinoza
 
 #include <stdio.h>
+#include "headers/gestion_regiones.h"
 
 // Función para mostrar el menú y obtener la opción del usuario
 int mostrarMenu() {
