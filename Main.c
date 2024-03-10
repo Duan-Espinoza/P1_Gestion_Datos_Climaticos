@@ -2,6 +2,7 @@
 //Gestor de datos climáticos
 //Estudiantes:
 //Duan Espinoza
+//Andy Elizondo
 
 #include <stdio.h>
 #include "headers/gestion_regiones.h"
