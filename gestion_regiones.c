@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "cJSON.h"
 #include "headers/gestion_regiones.h"
 
 // Definir un arreglo para almacenar las regiones
@@ -10,19 +11,67 @@ int num_regiones = 0;
 
 // Función para crear una nueva región
 void crearRegion(Region region) {
+    // Abrir el archivo JSON de regiones en modo lectura
+    FILE *archivo = fopen("../datos/datos_regiones.json", "r");
+    if (archivo == NULL) {
+        printf("Error al abrir el archivo.\n");
+        return;
+    }
+
+    // Leer el contenido del archivo JSON
+    fseek(archivo, 0, SEEK_END);
+    long tamaño_archivo = ftell(archivo);
+    fseek(archivo, 0, SEEK_SET);
+    char *contenido_json = malloc(tamaño_archivo + 1);
+    fread(contenido_json, 1, tamaño_archivo, archivo);
+    contenido_json[tamaño_archivo] = '\0';
+    fclose(archivo);
+
+    // Convertir el contenido del archivo a un objeto cJSON
+    cJSON *json = cJSON_Parse(contenido_json);
+    free(contenido_json);
+
     // Verificar si ya existe una región con el mismo nombre
-    for (int i = 0; i < num_regiones; i++) {
-        if (strcasecmp(region.nombre, regiones[i].nombre) == 0) {
+    cJSON *regiones_json = cJSON_GetObjectItem(json, "regiones");
+    cJSON *region_json = NULL;
+    cJSON_ArrayForEach(region_json, regiones_json) {
+        char *nombre = cJSON_GetObjectItem(region_json, "nombre")->valuestring;
+        if (strcasecmp(region.nombre, nombre) == 0) {
             printf("Ya existe una región con el nombre \"%s\".\n", region.nombre);
+            cJSON_Delete(json);
             return;
         }
     }
+    cJSON_Delete(json);
 
     // Agregar la nueva región al arreglo
     if (num_regiones < MAX_REGIONES) {
         regiones[num_regiones] = region;
         num_regiones++;
         printf("Región \"%s\" creada exitosamente.\n", region.nombre);
+
+        // Abrir el archivo JSON de regiones en modo escritura (agregar al final)
+        archivo = fopen("../datos/datos_regiones.json", "a");
+        if (archivo == NULL) {
+            printf("Error al abrir el archivo.\n");
+            return;
+        }
+
+        // Crear un objeto cJSON para la nueva región
+        cJSON *nueva_region_json = cJSON_CreateObject();
+        cJSON_AddStringToObject(nueva_region_json, "nombre", region.nombre);
+        cJSON_AddNumberToObject(nueva_region_json, "ubicacion_x", region.ubicacion_x);
+        cJSON_AddNumberToObject(nueva_region_json, "ubicacion_y", region.ubicacion_y);
+        cJSON_AddStringToObject(nueva_region_json, "descripcion", region.descripcion);
+
+        // Convertir el objeto cJSON a una cadena JSON y escribirlo en el archivo
+        char *nueva_region_str = cJSON_PrintUnformatted(nueva_region_json);
+        fprintf(archivo, "%s\n", nueva_region_str);
+
+        // Liberar memoria y cerrar el archivo
+        fclose(archivo);
+        cJSON_Delete(nueva_region_json);
+        free(nueva_region_str);
     } else {
         printf("Se ha alcanzado el máximo de regiones que se pueden almacenar.\n");
     }
