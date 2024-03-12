@@ -3,17 +3,24 @@
 
 #include <stdio.h>
 
-// Estructura para almacenar datos de una región
-typedef struct Region {
+// Estructura para representar una región
+typedef struct {
     char nombre[50];
-    float x;
-    float y;
-    char descripcion[200];
+    int ubicacion_x;
+    int ubicacion_y;
+    char descripcion[100];
 } Region;
 
-// Prototipos de funciones
-void crearRegion(Region *region);
-void mostrarRegiones(void);
-void eliminarRegion(char *nombre);
+// Función para crear una nueva región
+void crearRegion(Region region);
 
-#endif // GESTION_REGIONES_H
+// Función para mostrar todas las regiones
+void mostrarRegiones();
+
+// Función para eliminar una región
+void eliminarRegion(char nombre[]);
+
+// Función para mostrar el menú de gestión de regiones
+void mostrarMenuGestionRegiones();
+
+#endif /* REGIONES_H */

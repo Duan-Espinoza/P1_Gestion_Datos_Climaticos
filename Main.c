@@ -33,6 +33,7 @@ int main() {
             case 1:
                 printf("Ha seleccionado Gestion de regiones\n");
                 // Aquí puedes llamar a la función correspondiente en tu archivo de header
+                mostrarMenuGestionRegiones();
                 break;
             case 2:
                 printf("Ha seleccionado Gestion de datos climaticos\n");
