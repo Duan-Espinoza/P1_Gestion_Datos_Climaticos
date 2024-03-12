@@ -4,6 +4,10 @@
 #include "cJSON.h"
 #include "headers/gestion_regiones.h"
 
+//path con el json
+const char *path_JSONDatosClimaticos = "datos\\datos_regiones.json";
+
+
 // Definir un arreglo para almacenar las regiones
 #define MAX_REGIONES 100
 Region regiones[MAX_REGIONES];
@@ -12,7 +16,7 @@ int num_regiones = 0;
 // Función para crear una nueva región
 void crearRegion(Region region) {
     // Abrir el archivo JSON de regiones en modo lectura
-    FILE *archivo = fopen("../datos/datos_regiones.json", "r");
+    FILE *archivo = fopen(path_JSONDatosClimaticos, "r");
     if (archivo == NULL) {
         printf("Error al abrir el archivo.\n");
         return;
@@ -51,7 +55,7 @@ void crearRegion(Region region) {
         printf("Región \"%s\" creada exitosamente.\n", region.nombre);
 
         // Abrir el archivo JSON de regiones en modo escritura (agregar al final)
-        archivo = fopen("../datos/datos_regiones.json", "a");
+        archivo = fopen(path_JSONDatosClimaticos, "a");
         if (archivo == NULL) {
             printf("Error al abrir el archivo.\n");
             return;
@@ -116,6 +120,7 @@ void eliminarRegion(char nombre[]) {
 // Implementación de la función para mostrar el menú de gestión de regiones
 void mostrarMenuGestionRegiones() {
     int opcion;
+    Region nueva_region;
     do {
         printf("\n===== Menú de Gestión de Regiones =====\n");
         printf("1. Crear región\n");
@@ -128,6 +133,16 @@ void mostrarMenuGestionRegiones() {
         switch (opcion) {
             case 1:
                 // Aquí puedes solicitar al usuario los datos de la región y llamar a la función crearRegion
+                //Region nueva_region;
+                printf("Ingrese el nombre de la región: ");
+                scanf("%s", nueva_region.nombre);
+                printf("Ingrese la ubicación X de la región: ");
+                scanf("%d", &nueva_region.ubicacion_x);
+                printf("Ingrese la ubicación Y de la región: ");
+                scanf("%d", &nueva_region.ubicacion_y);
+                printf("Ingrese la descripción de la región: ");
+                scanf("%s", nueva_region.descripcion);
+                crearRegion(nueva_region);
                 break;
             case 2:
                 mostrarRegiones();

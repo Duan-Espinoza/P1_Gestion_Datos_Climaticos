@@ -1,0 +1,16 @@
+{
+    "regiones": [
+        {
+            "nombre": "Región existente",
+            "ubicacion_x": 10,
+            "ubicacion_y": 20,
+            "descripcion": "Esta es una región existente."
+        },
+        {
+            "nombre": "Nueva región",
+            "ubicacion_x": 30,
+            "ubicacion_y": 40,
+            "descripcion": "Esta es una nueva región."
+        }
+    ]
+}
