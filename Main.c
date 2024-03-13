@@ -5,7 +5,6 @@
 //Andy Cruz
 #include "headers/gestion_datos_climaticos.h"
 #include <stdio.h>
-#include <ctype.h>
 
 
 // Función para mostrar el menú y obtener la opción del usuario

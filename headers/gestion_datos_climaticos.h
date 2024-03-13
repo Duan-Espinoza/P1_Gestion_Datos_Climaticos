@@ -2,11 +2,13 @@
 #define GESTION_DATOS_CLIMATICOS_H
 
 #include "cjson/cJSON.h"
-#include "struct_dato_climatico.h"
+#include "structs_datos_climaticos.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <stdbool.h>
+#include <time.h>
 //ruta al archivo json
 const char *path_JSONDatosClimaticos = "datos\\datos_climaticos.json";
 
@@ -14,19 +16,27 @@ void extraerCsv(const char *path);
 bool determinarLinea(char *pLinea);
 char* getContenido(const char *pathCsv);
 void insertarDatoClimatico(datoClimatico pDatoClimatico);
+bool nComasReq(char *pLinea);
 int getID_UltimoIdDatoClimatico();
+bool cronologiaCorrecta(char *pFecha, char *phora);
+bool formatoHoraCorrecto(char *pHora);
+bool formatoFechaCorrecto(char *pFecha);
+bool esMesLargo(int pMes);
+bool esAtributoInvalido(char *pAtributo, bool esFloat);
+bool esDirCorrecta(char *atributo);
 /** 
  * Se encarga de solicitar la ruta del archivo por medio de la consola
  * Esta ruta se envía como un const char* 
 */
-int gestionDatosClimaticos(){
+void gestionDatosClimaticos(){
     char path[200];
     printf("-Por favor, ingrese la direccion del archivo.csv: ");
-    scanf("%s", &path);
-    printf("\n A continuación se hace lectura de los datos del archivo ingresado \n");
+    scanf("%s", &path); 
     const char* pathArchivo = path;
+    
     extraerCsv(pathArchivo);
-    return 0;
+    
+    
 }
 /** 
  * Se encarga de seguir la ruta para parsear el archivo 
@@ -57,8 +67,8 @@ char* getContenido(const char *pathCsv){
     return contenido;
 }
 /** 
- * Encargada de recibir el struct datoClimatico y
- * y agregarlo como un objeto JSON al archivo de persistencia de datos
+ * Se encarga de hacer la consulta en archivo.json y retornar el 
+ * id del último elemento. Se utiliza para conocer el último registro agregado 
 */
 int getID_UltimoIdDatoClimatico(){
     char* archivoJson = getContenido(path_JSONDatosClimaticos);
@@ -103,17 +113,78 @@ void insertarDatoClimatico(datoClimatico pDatoClimatico){
     //Se limpia la memoria 
     free(str_datos_climaticos);
     cJSON_Delete(json_objClima);
-    printf("[Agregado] = Si  \n");
+    
+}
+/** 
+ * Recibe una cadena de caracteres e indica si tiene info o no
+ * se le indica por parámetro si valida de tipo int o float
+*/
+bool esAtributoInvalido(char *pAtributo, bool esFloat){
+    if(esFloat){        
+        if(strspn(pAtributo, ".0123456789") == 0 && strspn(pAtributo, ".0123456789") != strlen(pAtributo)){return true;}
+        //validación de punto 
+        bool puntoUbicado = false;
+        for(char *chr = pAtributo; *chr != '\0' && *chr != '\n'; *chr++){
+            if(*chr == '.'){
+                if(puntoUbicado){return false;}
+                if(*chr == pAtributo[strlen(pAtributo)-1]){return false;}
+                puntoUbicado = true;
+            }
+        }
+    }else{               
+        if (strchr(pAtributo, '.') != NULL){ return true;}
+        if(strspn(pAtributo, "0123456789") == 0 && strspn(pAtributo, "0123456789") != strlen(pAtributo)){return true;}       
+    }    
+    return false;
+}
+/** 
+ * Recibe un arreglo de caracteres con información que debería ser
+ * la del dirección del viento, si esto no es correcto retorna false
+*/
+bool esDirCorrecta(char *atributo){
+    if(strcmp(atributo,"N") == 0 || strcmp(atributo,"S") == 0 || strcmp(atributo,"E") == 0 || strcmp(atributo,"W") == 0 ||
+    strcmp(atributo,"NE") == 0 || strcmp(atributo,"NW") == 0 || strcmp(atributo,"SE") == 0 || strcmp(atributo,"SW") == 0){        
+        return true;
+    }    
+    return false;
+}
+
+/** 
+ * Recibe una línea y comprueba si tiene 8 comas, para hacer 
+ * constar de que pueden existir 9 campos 
+*/
+bool nComasReq(char *pLinea){
+    bool resultado = false;
+    int contComas = 0;
+    
+    int largo = strlen(pLinea)+1;
+    for(char *chr = pLinea; *chr != '\n' && *chr != '\0'; *chr++){
+        if (*chr == ','){contComas++;}
+    }
+    
+    if(contComas == 8){
+        
+        return true;
+    }   
+    return false;
+        
 }
 /** 
  * recibe una linea que contiene los valores de gestion de datos 
  * climáticos, retorna un valor booleano según si se agrega una linea o no  
 */
 bool determinarLinea(char* pLinea){
-    printf("\n->[Nueva Linea] = %s ",pLinea);
+    printf("\n->[Nueva Linea] = %s",pLinea);
+    // Valida cantidad de comas,suguiere que no hay suficientes datos
+    if(!nComasReq(pLinea)){
+        return false;
+    }
+    
     datoClimatico nuevoDatoClimatico;
     int indiceAtributo = 1;
     char *atributo = NULL;
+    char *fechaAtributo;
+    char *horaAtributo;
     size_t tamanoAtributo = 0;
 
     int largo = strlen(pLinea)+1;
@@ -127,61 +198,72 @@ bool determinarLinea(char* pLinea){
             switch (indiceAtributo){        
                 
                 case 1: //region
+                    /*validacion pendiente*/
+                    // Buscar existencia en el archivo de regiones
                     nuevoDatoClimatico.region = strdup(atributo);//copia dinamicamente una cadena
-                    printf("\n[Region] = ok");
+                    //printf(" ->[Region] = [ok]");
                     break;
                 
                 case 2: //fecha
-                    /*validacion pendiente*/
+                    //validacion de formato
+                    if(! formatoFechaCorrecto(atributo)) { return false;}
+                    fechaAtributo = strdup(atributo);
                     nuevoDatoClimatico.fecha = strdup(atributo);//copia dinamicamente una cadena            
-                    printf("\n[Fecha] = ok");
+                    
                     break;
                 
                 case 3://hora
-                    /*validacion pendiente*/
-                    nuevoDatoClimatico.hora = strdup(atributo);//copia dinamicamente una cadena            
-                    printf("\n[Hora] = ok");
+                    // validacion de formato
+                    if(! formatoHoraCorrecto(atributo)) {  return false;}
+                    horaAtributo = strdup(atributo);   
+                    // verifica si no es una fecha posterior a la actual
+                    if(!cronologiaCorrecta(fechaAtributo, horaAtributo)){ return false;}
+                    
+                    nuevoDatoClimatico.hora = strdup(atributo);//copia dinamicamente una cadena  
                     break;
                 
-                case 4: //temperatura   puede ir vacía
-                    /*validacion pendiente*/
+                case 4: //temperatura   puede ir vacía                    
                     float v_temperatura = atof(atributo); //array to float
-                    nuevoDatoClimatico.temperatura = v_temperatura;
-                    printf("\n[Temperatura] = ok");
+                    if(esAtributoInvalido(atributo,true)){return false;}
+                    nuevoDatoClimatico.temperatura = v_temperatura;                    
+                    
                     break;
                 
-                case 5: //humedad       puede ir vacía
-                    /*validacion pendiente*/
+                case 5: //humedad       puede ir vacía                    
                     float v_humedad = atof(atributo); //array to float
+                    if(esAtributoInvalido(atributo,true)){ return false;}
                     nuevoDatoClimatico.humedad = v_humedad;
-                    printf("\n[Humedad] = ok");
+                    
                     break;
                 
                 case 6: //presion       puede ir vacía
-                    /*validacion pendiente*/
+                    
                     float v_presion = atof(atributo); //array to float
+                    if(esAtributoInvalido(atributo,true)){ return false;}
                     nuevoDatoClimatico.presion = v_presion;
-                    printf("\n[Presion]= ok");
+                    
                     break;
                 
                 case 7: //velcdViento   puede ir vacía
-                    /*validacion pendiente*/
+                    
                     int v_velcdViento = atoi(atributo); //array to int
+                    if(esAtributoInvalido(atributo,false)){ return false;}
                     nuevoDatoClimatico.velcdViento = v_velcdViento;
-                    printf("\n[Velocidad del viento] = ok");
+                    
                     break;
                 
                 case 8: //dirViento
-                    /*validacion pendiente*/
-                    nuevoDatoClimatico.dirViento = strdup(atributo);//copia dinamicamente una cadena   
-                    printf("\n[Direccion del viento] = ok");         
+                    
+                    if(!esDirCorrecta(atributo)){ return false;}
+                    nuevoDatoClimatico.dirViento = strdup(atributo); //copia dinamicamente una cadena   
+                       
                     break;
                 
                 case 9: //precipitacion puede ir vacía
-                    /*validacion pendiente*/
+                    
                     int v_precipitacion = atoi(atributo); //array to int
+                    if(esAtributoInvalido(atributo,false)){ return false;}
                     nuevoDatoClimatico.precipitacion = v_precipitacion;
-                    printf("\n[Precipitacion] = ok");
                     break;
                 default:
                     break;
@@ -196,19 +278,190 @@ bool determinarLinea(char* pLinea){
         }
         largo--;
     }
-    printf("\n\n-> Datos de struct: \n");
-    printf("- Region: %s\n",nuevoDatoClimatico.region);
-    printf("- Fecha: %s\n",nuevoDatoClimatico.fecha);
-    printf("- Hora: %s\n",nuevoDatoClimatico.hora);
-    printf("- Temperatura: %f\n",nuevoDatoClimatico.temperatura);
-    printf("- humedad: %f\n",nuevoDatoClimatico.humedad);
-    printf("- Presion: %f\n",nuevoDatoClimatico.presion);
-    printf("- Velocidad del viento: %d\n",nuevoDatoClimatico.velcdViento);
-    printf("- Direccion del viento: %s\n",nuevoDatoClimatico.dirViento);
-    printf("- Precipitacion: %d\n",nuevoDatoClimatico.precipitacion);
+    free(fechaAtributo);
+    free(horaAtributo);
     insertarDatoClimatico(nuevoDatoClimatico);
+    
     return true;
-}  
+} 
+/** 
+ * Recibe 2 arreglos de caracteres con los datos de fecha y hora e indica  
+ * si esa fecha es anterior a la fecha actual
+*/ 
+bool cronologiaCorrecta(char *pFecha, char *pHora){
+    //Carga datos de fecha
+    char anio[5];
+    memcpy(anio,pFecha,4);
+    anio[5] = '\0';    
+    int i_anio = atoi(anio); 
+    
+    char mes[3];    
+    memcpy(mes,pFecha + 5,2);
+    mes[2] = '\0';
+    int i_mes = atoi(mes); 
+    
+    char dia[3];    
+    memcpy(dia,pFecha + 8,2);
+    dia [2] = '\0';
+    int i_dia = atoi(dia);
+
+    //Carga datos de hora
+    char hora[3];
+    memcpy(hora, pHora, 2);
+    hora[2] = '\0';
+    int i_hora = atoi(hora);
+
+    char mins[3];
+    memcpy(mins, pHora+3, 2);
+    mins[2] = '\0';    
+    int i_mins = atoi(mins);
+
+    //Carga fecha actual 
+    struct tm *pointr;
+    time_t fechaActual = time(NULL); 
+    pointr = localtime(&fechaActual);
+    char anioActual[5];
+    strftime(anioActual,sizeof(anioActual),"%Y",pointr); 
+    anioActual[4] = '\0';
+    int i_anioActual = atoi(anioActual);
+
+    if (i_anio > i_anioActual) {                            //Año
+        return false;
+    }else if(i_anio == i_anioActual){
+        char mesActual [3];
+        strftime(mesActual,sizeof(mesActual),"%m",pointr);
+        mesActual[2] = '\0';
+    
+        int i_mesActual = atoi(mesActual);
+        if (i_mes > i_mesActual){                           //mes
+            return false;
+        } else if (i_mes == i_mesActual){
+            char diaActual [3];
+            strftime(diaActual,sizeof(diaActual),"%d",pointr);
+            diaActual[2] = '\0';
+
+            int i_diaActual = atoi(diaActual);
+            if (i_dia > i_diaActual){                       //dia
+                return false;
+            }else if(i_dia == i_diaActual){
+                char horaActual [3];
+                strftime(horaActual,sizeof(horaActual),"%H",pointr);
+                horaActual[2] = '\0';
+
+                int i_horaActual = atoi(horaActual);
+                if(i_hora > i_horaActual){                  //hora
+                    return false;
+                } else if(i_hora == i_horaActual){
+                    char minsActual [3];
+                    strftime(minsActual,sizeof(minsActual),"%M",pointr);
+                    minsActual[2] = '\0';
+
+                    int i_minsActual = atoi(minsActual);
+                    if (i_mins > i_minsActual){             //minutos
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+    
+    //printf("\nAnio actual: %s\n",anioActual);
+    return true;
+}
+/** 
+ * Recibe una cadena de caracteres y pretende corroborar que el formato de 
+ * la hora sea el especificado 
+ * retorna valor bool (hh:mm)
+*/ 
+bool formatoHoraCorrecto(char *pHora){
+    if (pHora[2] != ':'){return false;} // valida el separador
+    char hora[3];
+    memcpy(hora, pHora, 2);
+    hora[2] = '\0';
+    if(strspn(hora, "0123456789") != strlen(hora)){return false;}   
+    int i_hora = atoi(hora);
+    char mins[3];
+    memcpy(mins, pHora+3, 2);
+    mins[2] = '\0';  
+    if(strspn(mins, "0123456789") != strlen(mins)){return false;}   
+    int i_mins = atoi(mins);
+    if((i_hora > 23) || (i_hora < 0) || (i_mins > 59) || (i_mins < 0)){return false;}
+    return true;
+}
+/** 
+ * Recibe una cadena de caracteres y pretende corroborar que el formato de 
+ * la fecha sea el especificado 
+ * retorna valor bool (yyyy-mm-dd)
+*/
+bool formatoFechaCorrecto(char *pFecha){
+    bool esBisiesto = false;
+    //parsear estructura de fecha
+    if(pFecha[4] != '-' ||pFecha[7] != '-' ){        
+        return false;
+    }
+    //valida año
+    char anio[5];
+    memcpy(anio,pFecha,4);
+    anio[5] = '\0'; 
+
+    if(strspn(anio, "0123456789") != strlen(anio)){return false;} 
+    int i_anio = atoi(anio);
+    if((i_anio % 4 == 0 && i_anio )|| (i_anio % 400 == 0)){ esBisiesto = true;}   
+    
+    //valida mes
+    char mes[3];    
+    memcpy(mes,pFecha + 5,2);
+    mes[2] = '\0';
+
+    if(strspn(mes, "0123456789") != strlen(mes)){return false;}  
+    int i_mes = atoi(mes); 
+    if ( (i_mes > 12) || (i_mes < 1)) { return false; }
+
+    //valida día 
+    // 31 días: enero, marzo, mayo, julio, agosto, octubre y diciembre
+    // 30 días: abril, junio, septiembre y noviembre
+    char dia[3];    
+    memcpy(dia,pFecha + 8,2);
+    dia [2] = '\0';
+
+    if(strspn(dia, "0123456789") != strlen(dia)){return false;}    
+    int i_dia = atoi(dia);
+    if ( (i_dia > 31) || (i_dia == 31 && !(esMesLargo(i_mes))) || (i_dia < 1)) { return false; } // Valida 31s 30s y negativos
+    if ((i_mes == 2 && i_dia > 29 && esBisiesto )|| (i_mes == 2 && i_dia > 28 && !esBisiesto )) { return false; } // valida el mes de febrero y sus factores
+
+    return true;
+}
+/** 
+ * Verifica si un número entero es un mes que llega hasta 31 o no
+*/
+bool esMesLargo(int pMes){
+    switch (pMes){
+        case 1:
+            return true;
+            break;
+        case 3:
+            return true;
+            break;
+        case 5:
+            return true;
+            break;
+        case 7:
+            return true;
+            break;
+        case 8:
+            return true;
+            break;
+        case 10:
+            return true;
+            break;
+        case 12:
+            return true;
+            break;
+        default:
+            break;
+    }
+    return false;
+}
 /** 
  * Función que recibe el path correspondiente al archivo
  * csv para la gestión de datos climáticos
@@ -223,6 +476,9 @@ void extraerCsv(const char* pathCsv){
     char* linea = NULL;
     size_t tamanoLinea = 0;
     bool finDelBucle = false;
+    int cantLineasReportadas = 0;
+    char **lineasReportadas = (char**)malloc(sizeof(char*));
+    printf("\n A continuacion se hace lectura de los datos del archivo ingresado \n");
     for (char* chr = contenido; finDelBucle != true; chr++){
         tamanoLinea++;
         
@@ -231,7 +487,13 @@ void extraerCsv(const char* pathCsv){
             linea = (char*) realloc(linea,tamanoLinea);
             linea[tamanoLinea-1] = '\0';
             
-            bool ret = determinarLinea(linea);
+            if (!determinarLinea(linea)){
+                cantLineasReportadas++;
+                lineasReportadas = (char**) realloc(lineasReportadas,cantLineasReportadas);
+                lineasReportadas[cantLineasReportadas-1] = (char*)malloc(sizeof(linea));
+                lineasReportadas[cantLineasReportadas-1] = strdup(linea);
+            }
+            
             free(linea);
             linea = NULL;
             tamanoLinea = 0;
@@ -246,6 +508,23 @@ void extraerCsv(const char* pathCsv){
     }
     free(contenido);
     free(linea);
+    printf("\n\nTotal de lineas reportadas por error [%d]\n\n",cantLineasReportadas);
+    
+    for(int i = 0; i < cantLineasReportadas; i++){
+        char *linea = (char*)malloc(sizeof(char));    
+        int tamanoLinea = 0;
+        for(char *chr = lineasReportadas[i]; *chr != '\0'; *chr++){
+            tamanoLinea++;
+            linea = (char*)realloc(linea, tamanoLinea);
+            linea[tamanoLinea-1] = *chr;
+        }
+        tamanoLinea+=2;
+        linea = (char*)realloc(linea, tamanoLinea);
+        linea[tamanoLinea-2] = '\n';
+        linea[tamanoLinea-1] = '\0';
+        printf("->%s",linea);
+        
+    }
 }
 
 #endif
