@@ -1,5 +1,5 @@
 #ifndef STRUCTS_DATOS_CLIMATICOS_H
-#define STRUCTS_DATO_CLIMATICOS_H
+#define STRUCTS_DATOS_CLIMATICOS_H
 struct datoClimatico{
     int id; 
     char *region;

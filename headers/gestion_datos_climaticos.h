@@ -11,7 +11,7 @@
 #include <time.h>
 //ruta al archivo json
 const char *path_JSONDatosClimaticos = "datos\\datos_climaticos.json";
-
+datoClimatico *getArrayDatosClimaticos();
 void extraerCsv(const char *path);
 bool determinarLinea(char *pLinea);
 char* getContenido(const char *pathCsv);
@@ -24,6 +24,40 @@ bool formatoFechaCorrecto(char *pFecha);
 bool esMesLargo(int pMes);
 bool esAtributoInvalido(char *pAtributo, bool esFloat);
 bool esDirCorrecta(char *atributo);
+
+/** 
+ * Accede al archivo Json para parsear los datos existentes
+ * y retornar un arreglo con todos los registros de datos climaticos, retorna null si no hay
+*/
+datoClimatico *getArrayDatosClimaticos(){
+
+    datoClimatico* arrayDatosClimaticos = (datoClimatico*) malloc(sizeof(datoClimatico));
+    char *archivoJson = getContenido(path_JSONDatosClimaticos);
+    cJSON* json_obj = cJSON_Parse(archivoJson);
+    if(cJSON_GetArraySize(json_obj) == 0){
+        return NULL;
+    }
+    cJSON* element;
+    int cantDatosClimaticos = 0;
+    cJSON_ArrayForEach(element,json_obj){
+        cantDatosClimaticos++;
+        datoClimatico nuevoDatoClimatico ;
+        nuevoDatoClimatico.id = (cJSON_GetObjectItemCaseSensitive(element,"id"))->valueint;
+        nuevoDatoClimatico.region = strdup((cJSON_GetObjectItemCaseSensitive(element,"region"))->valuestring);
+        nuevoDatoClimatico.fecha = strdup((cJSON_GetObjectItemCaseSensitive(element,"fecha"))->valuestring);
+        nuevoDatoClimatico.hora = strdup((cJSON_GetObjectItemCaseSensitive(element,"hora"))->valuestring);
+        nuevoDatoClimatico.temperatura = (cJSON_GetObjectItemCaseSensitive(element,"temperatura"))->valuedouble;
+        nuevoDatoClimatico.humedad = (cJSON_GetObjectItemCaseSensitive(element,"humedad"))->valuedouble;
+        nuevoDatoClimatico.presion = (cJSON_GetObjectItemCaseSensitive(element,"presion"))->valuedouble;
+        nuevoDatoClimatico.velcdViento = (cJSON_GetObjectItemCaseSensitive(element,"velcdViento"))->valueint;
+        nuevoDatoClimatico.dirViento = strdup((cJSON_GetObjectItemCaseSensitive(element,"dirViento"))->valuestring);
+        nuevoDatoClimatico.precipitacion = (cJSON_GetObjectItemCaseSensitive(element,"precipitacion"))->valueint;
+        arrayDatosClimaticos = (datoClimatico*)realloc(arrayDatosClimaticos,cantDatosClimaticos * sizeof(datoClimatico));
+        arrayDatosClimaticos[cantDatosClimaticos-1] = nuevoDatoClimatico;
+        
+    };
+    return arrayDatosClimaticos;
+}
 /** 
  * Se encarga de solicitar la ruta del archivo por medio de la consola
  * Esta ruta se envía como un const char* 

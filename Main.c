@@ -3,6 +3,7 @@
 //Estudiantes:
 //Duan Espinoza
 //Andy Cruz
+#include "headers/procesamiento_datos.h"
 #include "headers/gestion_datos_climaticos.h"
 #include <stdio.h>
 
@@ -42,7 +43,7 @@ int main() {
                 break;
             case 3:
                 printf("Ha seleccionado Procesamiento de datos\n");
-                // Aquí puedes llamar a la función correspondiente en tu archivo de header
+                procesamientoDatos();
                 break;
             case 4:
                 printf("Ha seleccionado Analisis de datos\n");
