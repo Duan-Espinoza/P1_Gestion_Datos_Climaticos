@@ -15,7 +15,7 @@ datoClimatico *getArrayDatosClimaticos();
 void extraerCsv(const char *path);
 bool determinarLinea(char *pLinea);
 char* getContenido(const char *pathCsv);
-void insertarDatoClimatico(datoClimatico pDatoClimatico);
+void insertarDatoClimatico(datoClimatico pDatoClimatico, bool esNuevo);
 bool nComasReq(char *pLinea);
 int getID_UltimoIdDatoClimatico();
 bool cronologiaCorrecta(char *pFecha, char *phora);
@@ -118,14 +118,16 @@ int getID_UltimoIdDatoClimatico(){
     return id;
 }
 /** 
- * Encargada de recibir el struct datoClimatico y
+ * Encargada de recibir el struct datoClimatico y un indicador para conocer su id o no
  * y agregarlo como un objeto JSON al archivo de persistencia de datos
 */
-void insertarDatoClimatico(datoClimatico pDatoClimatico){
+void insertarDatoClimatico(datoClimatico pDatoClimatico, bool esNuevo){
     //Se crea un objeto JSON con los datos del struct
     cJSON* json_objClima = cJSON_CreateObject();
-    int ultimoId = getID_UltimoIdDatoClimatico() + 1;
-    cJSON_AddNumberToObject(json_objClima,"id",ultimoId);
+    int id;
+    if(esNuevo){id = getID_UltimoIdDatoClimatico() + 1; } else{id = pDatoClimatico.id; }
+    
+    cJSON_AddNumberToObject(json_objClima,"id",id);
     cJSON_AddStringToObject(json_objClima,"region",pDatoClimatico.region);
     cJSON_AddStringToObject(json_objClima,"fecha",pDatoClimatico.fecha);
     cJSON_AddStringToObject(json_objClima,"hora",pDatoClimatico.hora);
@@ -314,7 +316,7 @@ bool determinarLinea(char* pLinea){
     }
     free(fechaAtributo);
     free(horaAtributo);
-    insertarDatoClimatico(nuevoDatoClimatico);
+    insertarDatoClimatico(nuevoDatoClimatico,true);
     
     return true;
 } 
@@ -507,7 +509,7 @@ void extraerCsv(const char* pathCsv){
         fprintf(stderr,"Error al leer el archivo.\n");
         return;
     }
-    char* linea = NULL;
+    char* linea = (char*)malloc(sizeof(char));
     size_t tamanoLinea = 0;
     bool finDelBucle = false;
     int cantLineasReportadas = 0;
@@ -521,11 +523,11 @@ void extraerCsv(const char* pathCsv){
             linea = (char*) realloc(linea,tamanoLinea);
             linea[tamanoLinea-1] = '\0';
             
-            if (!determinarLinea(linea)){
+            if (!determinarLinea(linea)){                
+                lineasReportadas = (char**) realloc(lineasReportadas,(cantLineasReportadas+1)*sizeof(char*));
+                //lineasReportadas[cantLineasReportadas-1] = (char*)malloc(sizeof(linea));
+                lineasReportadas[cantLineasReportadas] = strdup(linea);
                 cantLineasReportadas++;
-                lineasReportadas = (char**) realloc(lineasReportadas,cantLineasReportadas);
-                lineasReportadas[cantLineasReportadas-1] = (char*)malloc(sizeof(linea));
-                lineasReportadas[cantLineasReportadas-1] = strdup(linea);
             }
             
             free(linea);
@@ -540,25 +542,18 @@ void extraerCsv(const char* pathCsv){
             linea[tamanoLinea-1] = *chr;
         }
     }
-    free(contenido);
-    free(linea);
-    printf("\n\nTotal de lineas reportadas por error [%d]\n\n",cantLineasReportadas);
     
-    for(int i = 0; i < cantLineasReportadas; i++){
-        char *linea = (char*)malloc(sizeof(char));    
-        int tamanoLinea = 0;
-        for(char *chr = lineasReportadas[i]; *chr != '\0'; *chr++){
-            tamanoLinea++;
-            linea = (char*)realloc(linea, tamanoLinea);
-            linea[tamanoLinea-1] = *chr;
-        }
-        tamanoLinea+=2;
-        linea = (char*)realloc(linea, tamanoLinea);
-        linea[tamanoLinea-2] = '\n';
-        linea[tamanoLinea-1] = '\0';
-        printf("->%s",linea);
-        
+    printf("\n\nTotal de lineas reportadas por error [%d]\n\n",cantLineasReportadas);
+
+    for (int i = 0; i < cantLineasReportadas; i++) {
+        printf("-> %s\n", lineasReportadas[i]);
+        free(lineasReportadas[i]);  // Liberar la memoria de cada línea
     }
+    
+    
+    free(lineasReportadas);
+    free(contenido);
+    
 }
 
 #endif
