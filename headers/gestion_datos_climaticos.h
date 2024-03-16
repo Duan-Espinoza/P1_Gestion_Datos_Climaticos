@@ -15,7 +15,7 @@ datoClimatico *getArrayDatosClimaticos();
 void extraerCsv(const char *path);
 bool determinarLinea(char *pLinea);
 char* getContenido(const char *pathCsv);
-void insertarDatoClimatico(datoClimatico pDatoClimatico, bool esNuevo);
+void insertarDatoClimatico(datoClimatico pDatoClimatico, bool esNuevo, int nulos[4]);
 bool nComasReq(char *pLinea);
 int getID_UltimoIdDatoClimatico();
 bool cronologiaCorrecta(char *pFecha, char *phora);
@@ -30,9 +30,9 @@ bool esDirCorrecta(char *atributo);
  * y retornar un arreglo con todos los registros de datos climaticos, retorna null si no hay
 */
 datoClimatico *getArrayDatosClimaticos(){
-
-    datoClimatico* arrayDatosClimaticos = (datoClimatico*) malloc(sizeof(datoClimatico));
-    char *archivoJson = getContenido(path_JSONDatosClimaticos);
+    
+    datoClimatico* arrayDatosClimaticos = (datoClimatico*) malloc(sizeof(datoClimatico));    
+    char *archivoJson = getContenido(path_JSONDatosClimaticos);    
     cJSON* json_obj = cJSON_Parse(archivoJson);
     if(cJSON_GetArraySize(json_obj) == 0){
         return NULL;
@@ -47,7 +47,7 @@ datoClimatico *getArrayDatosClimaticos(){
         nuevoDatoClimatico.fecha = strdup((cJSON_GetObjectItemCaseSensitive(element,"fecha"))->valuestring);
         nuevoDatoClimatico.hora = strdup((cJSON_GetObjectItemCaseSensitive(element,"hora"))->valuestring);
         nuevoDatoClimatico.temperatura = (cJSON_GetObjectItemCaseSensitive(element,"temperatura"))->valuedouble;
-        nuevoDatoClimatico.humedad = (cJSON_GetObjectItemCaseSensitive(element,"humedad"))->valuedouble;
+        //nuevoDatoClimatico.humedad = (cJSON_GetObjectItemCaseSensitive(element,"humedad"))->valuedouble;
         nuevoDatoClimatico.presion = (cJSON_GetObjectItemCaseSensitive(element,"presion"))->valuedouble;
         nuevoDatoClimatico.velcdViento = (cJSON_GetObjectItemCaseSensitive(element,"velcdViento"))->valueint;
         nuevoDatoClimatico.dirViento = strdup((cJSON_GetObjectItemCaseSensitive(element,"dirViento"))->valuestring);
@@ -121,7 +121,7 @@ int getID_UltimoIdDatoClimatico(){
  * Encargada de recibir el struct datoClimatico y un indicador para conocer su id o no
  * y agregarlo como un objeto JSON al archivo de persistencia de datos
 */
-void insertarDatoClimatico(datoClimatico pDatoClimatico, bool esNuevo){
+void insertarDatoClimatico(datoClimatico pDatoClimatico, bool esNuevo, int nulos[5]){
     //Se crea un objeto JSON con los datos del struct
     cJSON* json_objClima = cJSON_CreateObject();
     int id;
@@ -131,12 +131,17 @@ void insertarDatoClimatico(datoClimatico pDatoClimatico, bool esNuevo){
     cJSON_AddStringToObject(json_objClima,"region",pDatoClimatico.region);
     cJSON_AddStringToObject(json_objClima,"fecha",pDatoClimatico.fecha);
     cJSON_AddStringToObject(json_objClima,"hora",pDatoClimatico.hora);
-    cJSON_AddNumberToObject(json_objClima,"temperatura",pDatoClimatico.temperatura);
-    cJSON_AddNumberToObject(json_objClima,"humedad",pDatoClimatico.humedad);
-    cJSON_AddNumberToObject(json_objClima,"presion",pDatoClimatico.presion);
-    cJSON_AddNumberToObject(json_objClima,"velcdViento",pDatoClimatico.velcdViento);
+    if(nulos[0]){cJSON_AddNumberToObject(json_objClima,"temperatura",pDatoClimatico.temperatura);}
+    else{cJSON_AddNullToObject(json_objClima,"temperatura");}
+    if(nulos[1]) {cJSON_AddNumberToObject(json_objClima,"humedad",pDatoClimatico.humedad); }
+    else{cJSON_AddNullToObject(json_objClima,"humedad");}
+    if(nulos[2]) {cJSON_AddNumberToObject(json_objClima,"presion",pDatoClimatico.presion); }
+    else{cJSON_AddNullToObject(json_objClima,"presion");}
+    if(nulos[3]) {cJSON_AddNumberToObject(json_objClima,"velcdViento",pDatoClimatico.velcdViento); }
+    else{cJSON_AddNullToObject(json_objClima,"velcdViento");}
     cJSON_AddStringToObject(json_objClima,"dirViento",pDatoClimatico.dirViento);
-    cJSON_AddNumberToObject(json_objClima,"precipitacion",pDatoClimatico.precipitacion);
+    if(nulos[4]) {cJSON_AddNumberToObject(json_objClima,"precipitacion",pDatoClimatico.precipitacion); }
+    else{cJSON_AddNullToObject(json_objClima,"precipitacion");}
     //Se obtiene el contenido de la data JSON para adjuntar el nuevo
     char* contenidoJSON = getContenido(path_JSONDatosClimaticos);
     cJSON* objetoJSON = cJSON_Parse(contenidoJSON);
@@ -148,7 +153,7 @@ void insertarDatoClimatico(datoClimatico pDatoClimatico, bool esNuevo){
     fclose(archivoJSON);
     //Se limpia la memoria 
     free(str_datos_climaticos);
-    cJSON_Delete(json_objClima);
+    //cJSON_Delete(json_objClima);
     
 }
 /** 
@@ -222,7 +227,7 @@ bool determinarLinea(char* pLinea){
     char *fechaAtributo;
     char *horaAtributo;
     size_t tamanoAtributo = 0;
-
+    int nulos [5] = {1,1,1,1,1};
     int largo = strlen(pLinea)+1;
     for(char *chr = pLinea; largo !=0; *chr++){
         tamanoAtributo++;        
@@ -260,32 +265,47 @@ bool determinarLinea(char* pLinea){
                 
                 case 4: //temperatura   puede ir vacía                    
                     float v_temperatura = atof(atributo); //array to float
-                    if(esAtributoInvalido(atributo,true)){return false;}
-                    nuevoDatoClimatico.temperatura = v_temperatura;                    
+                    if(esAtributoInvalido(atributo,true)){return false;}                    
+                    else if(tamanoAtributo >1){
+                        nuevoDatoClimatico.temperatura = v_temperatura;                    
+                        } else{
+                            nulos[0] = 0;
+                    }                    
                     
                     break;
                 
-                case 5: //humedad       puede ir vacía                    
+                case 5: //humedad       puede ir vacía                                       
                     float v_humedad = atof(atributo); //array to float
+                
                     if(esAtributoInvalido(atributo,true)){ return false;}
-                    nuevoDatoClimatico.humedad = v_humedad;
+                    else if(tamanoAtributo >1){
+                        nuevoDatoClimatico.humedad = v_humedad;
+                        } else{
+                            nulos[1] = 0;
+                    }                    
                     
                     break;
                 
                 case 6: //presion       puede ir vacía
                     
                     float v_presion = atof(atributo); //array to float
-                    if(esAtributoInvalido(atributo,true)){ return false;}
-                    nuevoDatoClimatico.presion = v_presion;
-                    
+                    if(esAtributoInvalido(atributo,true)){ return false;}                    
+                    else if(tamanoAtributo >1){
+                        nuevoDatoClimatico.presion = v_presion;
+                        } else{
+                            nulos[2] = 0;
+                    } 
                     break;
                 
                 case 7: //velcdViento   puede ir vacía
                     
                     int v_velcdViento = atoi(atributo); //array to int
-                    if(esAtributoInvalido(atributo,false)){ return false;}
-                    nuevoDatoClimatico.velcdViento = v_velcdViento;
-                    
+                    if(esAtributoInvalido(atributo,false)){ return false;}                    
+                    else if(tamanoAtributo >1){
+                        nuevoDatoClimatico.velcdViento = v_velcdViento;
+                        } else{
+                            nulos[3] = 0;
+                    } 
                     break;
                 
                 case 8: //dirViento
@@ -298,8 +318,12 @@ bool determinarLinea(char* pLinea){
                 case 9: //precipitacion puede ir vacía
                     
                     int v_precipitacion = atoi(atributo); //array to int
-                    if(esAtributoInvalido(atributo,false)){ return false;}
-                    nuevoDatoClimatico.precipitacion = v_precipitacion;
+                    if(esAtributoInvalido(atributo,false)){ return false;}                    
+                    else if(tamanoAtributo >1){
+                        nuevoDatoClimatico.precipitacion = v_precipitacion;
+                        } else{
+                            nulos[4] = 0;
+                    }
                     break;
                 default:
                     break;
@@ -316,7 +340,7 @@ bool determinarLinea(char* pLinea){
     }
     free(fechaAtributo);
     free(horaAtributo);
-    insertarDatoClimatico(nuevoDatoClimatico,true);
+    insertarDatoClimatico(nuevoDatoClimatico,true, nulos);
     
     return true;
 } 

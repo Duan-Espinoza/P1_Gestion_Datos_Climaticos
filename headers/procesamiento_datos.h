@@ -48,29 +48,56 @@ void imprimirDatoClimatico (datoClimatico *pDatoClimatico){
  * mediante alguno de los tres algoritmos propuestos
 */
 void completadoRegDatos(){
-    //PARA EJEMPLO DE USO DE EXTRAER E IMPRIMIR LOS DATOS
-    datoClimatico *datosCl = getArrayDatosClimaticos();
-    imprimirArrayDatosClimaticos(datosCl);
+    // Se extraen los datos
+    datoClimatico *datosClimaticos = getArrayDatosClimaticos();
+    // Recorrer arreglo de datosClimaticos
+    for (datoClimatico *datoClimatico = datosClimaticos; datoClimatico->id != 0; datoClimatico++ ){       
+        // determinarCambiosRegistro(elemeto) {imprimeCambio(atributo)}          
+    }
+                        
+}
+
+/** 
+ * Se encarga de analizar los datos del archivo json en búsqueda de registros
+ * con atributos vacíos para realizar la completación de los datos según la fórmula
+*/
+bool determinarCambiosRegistro(datoClimatico pDatoClimatico, int index){
+    //Solo debe validarse:
+    //temperatura
+    //if((pDatoClimatico.temperatura))
+    //humedad
+    //presion
+    //vecldViento
+    //precipitacion
+
+    return false;
 }
 /** 
- * Se encarga de analizar los registros del archivo json en búsqueda de registros  
- * con la TOTALIDAD de sus datos iguales
+ * Se encarga de analizar los datos del archivo json en búsqueda de registros  
+ * con la TOTALIDAD de sus datos iguales para eliminar el duplicado
 */
 void eliminarRegDuplicados(){
     //se extraen los structs
+    
     datoClimatico *datosClimaticos = getArrayDatosClimaticos();
+    if (datosClimaticos == NULL){
+        printf("\nNo hay registros guardados actualmente\n");
+        return;
+    }
     int cantIdsPorBorrar = 0;
     int *idsPorBorrar = malloc(1* sizeof(int));
     //se hace busqueda a través de ciclos anidados y comparaciones
     for(datoClimatico *actual_datoClimatico = datosClimaticos; actual_datoClimatico->id != 0; actual_datoClimatico++ ){
         //Verifica que el elemento actual no sea uno que anteriormente haya sido marcado como por eliminar
+        
         bool datoBorrado = estaEnArreglo (actual_datoClimatico->id, idsPorBorrar, cantIdsPorBorrar);         
         if (!datoBorrado){            
             for(datoClimatico *comparado_datoClimatico = actual_datoClimatico+1; comparado_datoClimatico->id != 0; comparado_datoClimatico++){                
                 if( sonDuplicados(actual_datoClimatico, comparado_datoClimatico) ){
+                    
+                    idsPorBorrar = (int*) realloc(idsPorBorrar,(cantIdsPorBorrar+1) * sizeof(int));
+                    idsPorBorrar[cantIdsPorBorrar] = comparado_datoClimatico->id;
                     cantIdsPorBorrar++;
-                    idsPorBorrar = realloc(idsPorBorrar,cantIdsPorBorrar * sizeof(int));
-                    idsPorBorrar[cantIdsPorBorrar-1] = comparado_datoClimatico->id;
                     printf("\nRegistros duplicados encontrados\n");
                     printf("- Primer registro:\n");
                     imprimirDatoClimatico(actual_datoClimatico);                    
@@ -80,12 +107,13 @@ void eliminarRegDuplicados(){
             }
         }
     }
+    
     char *contenidoJson = getContenido(path_JSONDatosClimaticos);
     cJSON *json_obj = cJSON_Parse(contenidoJson);
     if(cJSON_GetArraySize(json_obj) == 0){
         return ;
     }
-    //Se eliman del json
+    //Se eliminan del json
     cJSON* element;
     for(int i = 0; i < cJSON_GetArraySize(json_obj); i++){
         element = cJSON_GetArrayItem(json_obj,i);
@@ -101,7 +129,7 @@ void eliminarRegDuplicados(){
     fprintf(archivoJSON, "%s",str_datos_climaticos);
     fclose(archivoJSON);
     //Se limpia la memoria 
-
+    
     free(str_datos_climaticos);
     
     
@@ -123,15 +151,19 @@ bool estaEnArreglo (int pElemento, int *pArreglo, int pCantElementos){
 */
 bool sonDuplicados(datoClimatico *datoCmp1, datoClimatico *datoCmp2){
     //Se comparan sus atributos de manera paralela
+    printf("\nentra, id: %d \n",datoCmp2->id);
     if( strcmp( datoCmp1->region, datoCmp2->region) != 0 ){return false; }
     if( strcmp( datoCmp1->fecha, datoCmp2->fecha) != 0){return false; }
     if( strcmp( datoCmp1->hora, datoCmp2->hora) != 0){return false; }
     if( datoCmp1->temperatura != datoCmp2->temperatura ){return false; }
+    printf("\n despues de temp \n");
     if( datoCmp1->humedad != datoCmp2->humedad ){return false; }
     if( datoCmp1->presion != datoCmp2->presion ){return false; }
     if( datoCmp1->velcdViento != datoCmp2->velcdViento ){return false; }
     if( strcmp( datoCmp1->dirViento, datoCmp2->dirViento)!=0 ){return false; }
     if( datoCmp1->precipitacion != datoCmp2->precipitacion ){return false; }
+    
+    printf("\nsale \n");
     return true;
 }
 /** 
