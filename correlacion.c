@@ -1,6 +1,8 @@
 #include "correlacion.h"
 #include <math.h>
 
+//Se requiere una funcionalidad previa que filtre los datos obtenidos de daatos_climaticos,json
+
 double calcularCorrelacionPearson(double *x, double *y, int n) {
     double sum_x = 0.0, sum_y = 0.0, sum_xy = 0.0;
     double sum_x_squared = 0.0, sum_y_squared = 0.0;
