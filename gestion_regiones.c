@@ -49,30 +49,61 @@ char* getContenido1(const char *pathCsv){
 }
 
 
-// Función para crear una nueva región
-void crearRegion(Region region) {
-    // Abrir el archivo JSON de regiones en modo lectura
+// Función para cargar el contenido del archivo JSON en un objeto cJSON
+cJSON *cargarJSON() {
     FILE *archivo = fopen(path_JSONDatosClimaticos, "r");
     if (archivo == NULL) {
-        printf("Error al abrir el archivo.\n");
-        return;
+        printf("Error al abrir el archivo JSON.\n");
+        return NULL;
     }
 
-    // Leer el contenido del archivo JSON
     fseek(archivo, 0, SEEK_END);
     long tamaño_archivo = ftell(archivo);
     fseek(archivo, 0, SEEK_SET);
-    char *contenido_json = malloc(tamaño_archivo + 1);
+
+    char *contenido_json = (char *)malloc(tamaño_archivo + 1);
     fread(contenido_json, 1, tamaño_archivo, archivo);
-    contenido_json[tamaño_archivo] = '\0';
     fclose(archivo);
 
-    // Convertir el contenido del archivo a un objeto cJSON
+    contenido_json[tamaño_archivo] = '\0';
+
     cJSON *json = cJSON_Parse(contenido_json);
     free(contenido_json);
 
-    // Verificar si ya existe una región con el mismo nombre
+    return json;
+}
+
+// Función para guardar el objeto cJSON de vuelta al archivo JSON
+void guardarJSON(cJSON *json) {
+    FILE *archivo = fopen(path_JSONDatosClimaticos, "w");
+    if (archivo == NULL) {
+        printf("Error al abrir el archivo JSON para escritura.\n");
+        return;
+    }
+
+    char *json_str = cJSON_Print(json);
+    fprintf(archivo, "%s\n", json_str);
+    fclose(archivo);
+    free(json_str);
+}
+
+
+// Función para crear una nueva región
+void crearRegion(Region region) {
+    cJSON *json = cargarJSON();
+    if (json == NULL) {
+        printf("Error al cargar el JSON.\n");
+        return;
+    }
+
     cJSON *regiones_json = cJSON_GetObjectItem(json, "regiones");
+    if (regiones_json == NULL) {
+        printf("Error: No se encontró el arreglo 'regiones' en el JSON.\n");
+        cJSON_Delete(json);
+        return;
+    }
+
+    // Verificar si ya existe una región con el mismo nombre
     cJSON *region_json = NULL;
     cJSON_ArrayForEach(region_json, regiones_json) {
         char *nombre = cJSON_GetObjectItem(region_json, "nombre")->valuestring;
@@ -82,103 +113,94 @@ void crearRegion(Region region) {
             return;
         }
     }
+
+    cJSON *nueva_region_json = cJSON_CreateObject();
+    cJSON_AddStringToObject(nueva_region_json, "nombre", region.nombre);
+    cJSON_AddNumberToObject(nueva_region_json, "ubicacion_x", region.ubicacion_x);
+    cJSON_AddNumberToObject(nueva_region_json, "ubicacion_y", region.ubicacion_y);
+    cJSON_AddStringToObject(nueva_region_json, "descripcion", region.descripcion);
+
+    cJSON_AddItemToArray(regiones_json, nueva_region_json);
+
+    guardarJSON(json);
     cJSON_Delete(json);
 
-    // Agregar la nueva región al arreglo
-    if (num_regiones < MAX_REGIONES) {
-        regiones[num_regiones] = region;
-        num_regiones++;
-        printf("Región \"%s\" creada exitosamente.\n", region.nombre);
-
-        // Abrir el archivo JSON de regiones en modo escritura (agregar al final)
-        archivo = fopen(path_JSONDatosClimaticos, "w");
-        if (archivo == NULL) {
-            printf("Error al abrir el archivo.\n");
-            return;
-        }
-
-        // Crear un objeto cJSON para el arreglo de regiones
-        cJSON *regiones_json = cJSON_CreateArray();
-
-        // Leer el contenido del archivo JSON si existe
-        fseek(archivo, 0, SEEK_END);
-        long tamaño_archivo = ftell(archivo);
-        fseek(archivo, 0, SEEK_SET);
-        if (tamaño_archivo > 0) {
-            char *contenido_json = malloc(tamaño_archivo + 1);
-            fread(contenido_json, 1, tamaño_archivo, archivo);
-            contenido_json[tamaño_archivo] = '\0';
-            fclose(archivo);
-            // Convertir el contenido del archivo a un objeto cJSON
-            cJSON *json = cJSON_Parse(contenido_json);
-            free(contenido_json);
-            // Obtener el arreglo de regiones si ya existen
-            cJSON *existentes_json = cJSON_GetObjectItemCaseSensitive(json, "regiones");
-            if (existentes_json != NULL) {
-                cJSON_AddItemReferenceToObject(regiones_json, "regiones", existentes_json);
-            }
-    }
-
-        // Crear un objeto cJSON para la nueva región
-        cJSON *nueva_region_json = cJSON_CreateObject();
-        cJSON_AddStringToObject(nueva_region_json, "nombre", region.nombre);
-        cJSON_AddNumberToObject(nueva_region_json, "ubicacion_x", region.ubicacion_x);
-        cJSON_AddNumberToObject(nueva_region_json, "ubicacion_y", region.ubicacion_y);
-        cJSON_AddStringToObject(nueva_region_json, "descripcion", region.descripcion);
-
-        // Agregar la nueva región al arreglo de regiones
-        cJSON_AddItemToArray(regiones_json, nueva_region_json);
-
-        // Escribir el objeto cJSON completo en el archivo
-        char *regiones_str = cJSON_Print(regiones_json);
-        fprintf(archivo, "%s\n", regiones_str);
-
-        // Liberar memoria y cerrar el archivo
-        fclose(archivo);
-        cJSON_Delete(regiones_json);
-        free(regiones_str);
-
-        //printf("Región \"%s\" creada exitosamente.\n", region.nombre);
-
-    } else {
-        printf("Se ha alcanzado el máximo de regiones que se pueden almacenar.\n");
-    }
+    printf("Región \"%s\" creada exitosamente.\n", region.nombre);
 }
 
+// 
+// 
 // Función para mostrar todas las regiones
 void mostrarRegiones() {
+    cJSON *json = cargarJSON();
+    if (json == NULL) {
+        printf("Error al cargar el JSON.\n");
+        return;
+    }
+
+    cJSON *regiones_json = cJSON_GetObjectItem(json, "regiones");
+    if (regiones_json == NULL) {
+        printf("Error: No se encontró el arreglo 'regiones' en el JSON.\n");
+        cJSON_Delete(json);
+        return;
+    }
+
     printf("\n=== Lista de Regiones ===\n");
-    for (int i = 0; i < num_regiones; i++) {
-        printf("Nombre: %s\n", regiones[i].nombre);
-        printf("Ubicación: (%d, %d)\n", regiones[i].ubicacion_x, regiones[i].ubicacion_y);
-        printf("Descripción: %s\n", regiones[i].descripcion);
+    cJSON *region_json = NULL;
+    cJSON_ArrayForEach(region_json, regiones_json) {
+        char *nombre = cJSON_GetObjectItem(region_json, "nombre")->valuestring;
+        int ubicacion_x = cJSON_GetObjectItem(region_json, "ubicacion_x")->valueint;
+        int ubicacion_y = cJSON_GetObjectItem(region_json, "ubicacion_y")->valueint;
+        char *descripcion = cJSON_GetObjectItem(region_json, "descripcion")->valuestring;
+
+        printf("Nombre: %s\n", nombre);
+        printf("Ubicación: (%d, %d)\n", ubicacion_x, ubicacion_y);
+        printf("Descripción: %s\n", descripcion);
         printf("\n");
     }
+
+    cJSON_Delete(json);
 }
 
-// Función para eliminar una región
+
+/// Función para eliminar una región
 void eliminarRegion(char nombre[]) {
+    cJSON *json = cargarJSON();
+    if (json == NULL) {
+        printf("Error al cargar el JSON.\n");
+        return;
+    }
+
+    cJSON *regiones_json = cJSON_GetObjectItem(json, "regiones");
+    if (regiones_json == NULL) {
+        printf("Error: No se encontró el arreglo 'regiones' en el JSON.\n");
+        cJSON_Delete(json);
+        return;
+    }
+
+    cJSON *region_json = NULL;
     int indice = -1;
-    // Buscar la región por su nombre (case insensitive)
-    for (int i = 0; i < num_regiones; i++) {
-        if (strcasecmp(nombre, regiones[i].nombre) == 0) {
+    int i = 0;
+    cJSON_ArrayForEach(region_json, regiones_json) {
+        char *nombre_region = cJSON_GetObjectItem(region_json, "nombre")->valuestring;
+        if (strcasecmp(nombre, nombre_region) == 0) {
             indice = i;
             break;
         }
+        i++;
     }
 
     if (indice != -1) {
-        // Aquí puedes implementar la lógica para validar y eliminar la región
-        // Por ahora, simplemente la eliminaremos del arreglo
-        for (int i = indice; i < num_regiones - 1; i++) {
-            regiones[i] = regiones[i + 1];
-        }
-        num_regiones--;
+        cJSON_DeleteItemFromArray(regiones_json, indice);
+        guardarJSON(json);
+        cJSON_Delete(json);
         printf("Región \"%s\" eliminada correctamente.\n", nombre);
     } else {
         printf("No se encontró una región con el nombre \"%s\".\n", nombre);
+        cJSON_Delete(json);
     }
 }
+
 
 
 // Implementación de la función para mostrar el menú de gestión de regiones

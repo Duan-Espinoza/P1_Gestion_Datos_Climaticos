@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "gestion_regiones.h": "c",
+        "correlacion.h": "c"
+    }
+}

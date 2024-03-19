@@ -1,6 +1,23 @@
-[{
-		"nombre":	"Alajuela",
-		"ubicacion_x":	45,
-		"ubicacion_y":	14,
-		"descripcion":	"cool"
-	}]
+{
+	"regiones":	[{
+			"nombre":	"Región A",
+			"ubicacion_x":	10,
+			"ubicacion_y":	20,
+			"descripcion":	"Esta es la región A"
+		}, {
+			"nombre":	"Región B",
+			"ubicacion_x":	30,
+			"ubicacion_y":	40,
+			"descripcion":	"Esta es la región B"
+		}, {
+			"nombre":	"Región C",
+			"ubicacion_x":	50,
+			"ubicacion_y":	60,
+			"descripcion":	"Esta es la región C"
+		}, {
+			"nombre":	"caribe",
+			"ubicacion_x":	45,
+			"ubicacion_y":	78,
+			"descripcion":	"cool"
+		}]
+}
