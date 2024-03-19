@@ -14,10 +14,5 @@
 			"ubicacion_x":	50,
 			"ubicacion_y":	60,
 			"descripcion":	"Esta es la región C"
-		}, {
-			"nombre":	"caribe",
-			"ubicacion_x":	45,
-			"ubicacion_y":	78,
-			"descripcion":	"cool"
 		}]
 }
