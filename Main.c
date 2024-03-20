@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include "headers/gestion_regiones.h"
-#include "headers/correlacion.h"
+//#include "headers/correlacion.h"
 
 // Función para mostrar el menú y obtener la opción del usuario
 int mostrarMenu() {
@@ -50,7 +50,7 @@ int main() {
                 break;
             case 5:
                 printf("Ha seleccionado Analisis de correlacion\n");
-                menuCorrelacion();
+                //menuCorrelacion();
                 // Aquí puedes llamar a la función correspondiente en tu archivo de header
                 break;
             case 6:

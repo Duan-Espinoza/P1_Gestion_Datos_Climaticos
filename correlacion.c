@@ -4,6 +4,7 @@
 #include <string.h>
 #include "cJSON.h"
 #include <math.h>
+#include <stdlib.h>
 
 
 // Rutas de los archivos JSON
