@@ -1,6 +1,6 @@
 #ifndef GESTION_DATOS_CLIMATICOS_H
 #define GESTION_DATOS_CLIMATICOS_H
-
+#include <math.h>
 #include "cjson/cJSON.h"
 #include "structs_datos_climaticos.h"
 #include <stdio.h>
@@ -46,16 +46,38 @@ datoClimatico *getArrayDatosClimaticos(){
         nuevoDatoClimatico.region = strdup((cJSON_GetObjectItemCaseSensitive(element,"region"))->valuestring);
         nuevoDatoClimatico.fecha = strdup((cJSON_GetObjectItemCaseSensitive(element,"fecha"))->valuestring);
         nuevoDatoClimatico.hora = strdup((cJSON_GetObjectItemCaseSensitive(element,"hora"))->valuestring);
-        nuevoDatoClimatico.temperatura = (cJSON_GetObjectItemCaseSensitive(element,"temperatura"))->valuedouble;
-        //nuevoDatoClimatico.humedad = (cJSON_GetObjectItemCaseSensitive(element,"humedad"))->valuedouble;
-        nuevoDatoClimatico.presion = (cJSON_GetObjectItemCaseSensitive(element,"presion"))->valuedouble;
-        nuevoDatoClimatico.velcdViento = (cJSON_GetObjectItemCaseSensitive(element,"velcdViento"))->valueint;
-        nuevoDatoClimatico.dirViento = strdup((cJSON_GetObjectItemCaseSensitive(element,"dirViento"))->valuestring);
-        nuevoDatoClimatico.precipitacion = (cJSON_GetObjectItemCaseSensitive(element,"precipitacion"))->valueint;
+        
+        cJSON * cjson_atributoTemperatura = cJSON_GetObjectItemCaseSensitive(element,"temperatura");         
+        if(strcmp(cJSON_Print(cjson_atributoTemperatura),"null") != 0){            
+            nuevoDatoClimatico.temperatura = cjson_atributoTemperatura->valuedouble;
+        }else{ nuevoDatoClimatico.temperatura = NAN; }        
+        
+        cJSON * cjson_atributoHumedad = cJSON_GetObjectItemCaseSensitive(element,"humedad");         
+        if(strcmp(cJSON_Print(cjson_atributoHumedad),"null") != 0){            
+            nuevoDatoClimatico.humedad = cjson_atributoHumedad->valuedouble;
+        }else{ nuevoDatoClimatico.humedad = NAN; }
+        
+        cJSON * cjson_atributoPresion = cJSON_GetObjectItemCaseSensitive(element,"presion");         
+        if(strcmp(cJSON_Print(cjson_atributoPresion),"null") != 0){            
+            nuevoDatoClimatico.presion = cjson_atributoPresion->valuedouble;
+        }else{ nuevoDatoClimatico.presion = NAN; }
+        
+        cJSON * cjson_atributoVelcdViento = cJSON_GetObjectItemCaseSensitive(element,"velcdViento");         
+        if(strcmp(cJSON_Print(cjson_atributoVelcdViento),"null") != 0){            
+            nuevoDatoClimatico.velcdViento = cjson_atributoVelcdViento->valueint;
+        }else{ nuevoDatoClimatico.velcdViento = -1; }
+        nuevoDatoClimatico.dirViento = strdup((cJSON_GetObjectItemCaseSensitive(element,"dirViento"))->valuestring);        
+        
+        cJSON * cjson_atributoPrecipitacion = cJSON_GetObjectItemCaseSensitive(element,"precipitacion");                 
+        if(strcmp(cJSON_Print(cjson_atributoPrecipitacion),"null") != 0){            
+            nuevoDatoClimatico.precipitacion = cjson_atributoPrecipitacion->valueint;
+        }else{ nuevoDatoClimatico.precipitacion = -1; }
+        
         arrayDatosClimaticos = (datoClimatico*)realloc(arrayDatosClimaticos,cantDatosClimaticos * sizeof(datoClimatico));
         arrayDatosClimaticos[cantDatosClimaticos-1] = nuevoDatoClimatico;
         
     };
+    
     return arrayDatosClimaticos;
 }
 /** 
@@ -152,8 +174,7 @@ void insertarDatoClimatico(datoClimatico pDatoClimatico, bool esNuevo, int nulos
     fprintf(archivoJSON, "%s",str_datos_climaticos);
     fclose(archivoJSON);
     //Se limpia la memoria 
-    free(str_datos_climaticos);
-    //cJSON_Delete(json_objClima);
+    free(str_datos_climaticos);    
     
 }
 /** 

@@ -14,32 +14,32 @@
 		"region":	"Norte",
 		"fecha":	"2023-05-01",
 		"hora":	"08:00",
-		"temperatura":	null,
 		"humedad":	60,
 		"presion":	1011,
 		"velcdViento":	20,
 		"dirViento":	"NW",
-		"precipitacion":	0
+		"precipitacion":	0,
+		"temperatura":	16.75
 	}, {
 		"id":	3,
 		"region":	"Norte",
 		"fecha":	"2024-03-11",
 		"hora":	"20:31",
-		"temperatura":	null,
 		"humedad":	63,
 		"presion":	1012,
 		"velcdViento":	22,
 		"dirViento":	"NW",
-		"precipitacion":	0
+		"precipitacion":	0,
+		"temperatura":	16.75
 	}, {
 		"id":	4,
 		"region":	"Sur",
 		"fecha":	"2024-03-11",
 		"hora":	"20:00",
 		"temperatura":	20,
-		"humedad":	null,
 		"presion":	1013,
 		"velcdViento":	10,
 		"dirViento":	"NE",
-		"precipitacion":	0
+		"precipitacion":	0,
+		"humedad":	60.766666412353516
 	}]
