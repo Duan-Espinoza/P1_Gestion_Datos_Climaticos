@@ -19,7 +19,7 @@ bool estaEnArreglo (int pElemento, int *pArreglo, int pCantElementos);
 float getPromedioAtributosFloat(char *pNombreAtributo);
 int getPromedioAtributosInt(char *pNombreAtributo);
 void determinarNulosRegistro(datoClimatico *pDatoClimatico);
-
+bool determinarRegistroAtipico(datoClimatico *pDatoClimatico);
 /** 
  * Llama a la función que retorna un array con los structs dato climatico  
  * desde los registros en el archivo json e imprime todos los registros
@@ -28,8 +28,7 @@ void imprimirArrayDatosClimaticos(datoClimatico *pDatosClimaticos){
     if(pDatosClimaticos == NULL){printf("\nNo hay registros\n"); return;}
     printf("\nLista de registros\n");
 
-    for (datoClimatico *datoClimatico = pDatosClimaticos; datoClimatico->id != 0; datoClimatico++ ){       
-        printf("\n llega a elemento por bucle for\n");
+    for (datoClimatico *datoClimatico = pDatosClimaticos; datoClimatico->id != 0; datoClimatico++ ){               
         imprimirDatoClimatico(datoClimatico);
         
     }
@@ -333,6 +332,10 @@ void eliminarRegDuplicados(){
     if(cJSON_GetArraySize(json_obj) == 0){
         return ;
     }
+    if(cantIdsPorBorrar==0){
+        printf("\nNo hay registros por borrar actualmente\n");
+        return;
+    }
     //Se eliminan del json
     cJSON* element;
     for(int i = 0; i < cJSON_GetArraySize(json_obj); i++){
@@ -384,11 +387,96 @@ bool sonDuplicados(datoClimatico *datoCmp1, datoClimatico *datoCmp2){
 }
 /** 
  * Se encarga de acceder a los registros del archivo json y analizar los datos atípicos
- * que se hayan introducido en el sistema con base en los algoritmos propuestos
+ * que se hayan introducido en el sistema y con base en los algoritmos propuestos eliminarlos
 */
 void eliminarRegAtipicos(){
     datoClimatico *datosClimaticos = getArrayDatosClimaticos();
-    imprimirArrayDatosClimaticos(datosClimaticos);
+     if (datosClimaticos == NULL){
+        printf("\nNo hay registros guardados actualmente\n");
+        return;
+    }
+    int cantIdsPorBorrar = 0;
+    int *idsPorBorrar = malloc(1* sizeof(int));
+    printf("\nSe va a analizar los registros en busqueda de datos atipicos para su eliminacion\n");
+    for(datoClimatico *actual_datoClimatico = datosClimaticos; actual_datoClimatico->id != 0; actual_datoClimatico++ ){
+        if (determinarRegistroAtipico(actual_datoClimatico)){            
+            idsPorBorrar = (int*) realloc(idsPorBorrar,(cantIdsPorBorrar+1) * sizeof(int));
+            idsPorBorrar[cantIdsPorBorrar] = actual_datoClimatico->id;
+            cantIdsPorBorrar++;
+        }
+    }
+    //imprimirArrayDatosClimaticos(datosClimaticos);
+    char *contenidoJson = getContenido(path_JSONDatosClimaticos);
+    cJSON *json_obj = cJSON_Parse(contenidoJson);
+    if(cJSON_GetArraySize(json_obj) == 0){
+        return ;
+    }
+    if(cantIdsPorBorrar==0){
+        printf("\nNo hay registros por borrar actualmente\n");
+        return;
+    }
+
+    //Se eliminan del json
+    cJSON* element;    
+    for(int i = 0; i < cJSON_GetArraySize(json_obj); i++){
+        element = cJSON_GetArrayItem(json_obj,i);
+        int idElementoActual = (cJSON_GetObjectItemCaseSensitive(element,"id"))->valueint;
+        if(estaEnArreglo(idElementoActual,idsPorBorrar, cantIdsPorBorrar)){
+            cJSON_DeleteItemFromArray(json_obj,i);
+            printf("\n *Registro [id=%d] eliminado*\n",idElementoActual);
+            i--;
+        }
+    }
+    FILE* archivoJSON = fopen(path_JSONDatosClimaticos,"w");
+    char* str_datos_climaticos = cJSON_Print(json_obj);
+    fprintf(archivoJSON, "%s",str_datos_climaticos);
+    fclose(archivoJSON);
+    //Se limpia la memoria 
+    
+    free(str_datos_climaticos);
+}
+/** 
+ * Identifica un registro de dato climatico con atributos atípicos y retorna su correspondiente en 
+ * valor de tipo bool
+*/
+bool determinarRegistroAtipico(datoClimatico *pDatoClimatico){
+    //temperatura
+    float promedioTemp = getPromedioAtributosFloat("temperatura");
+    float resultadoTemp = abs(promedioTemp - (pDatoClimatico->temperatura) );
+    if(resultadoTemp > 100.0){
+        printf("\nAtributo temperatura:[%f] del registro id:[%d] atipico\n",pDatoClimatico->temperatura,pDatoClimatico->id);
+        return true;
+    }    
+    //humedad
+    float promedioHumedad = getPromedioAtributosFloat("humedad");
+    float resultadoHumedad = abs(promedioHumedad - (pDatoClimatico->humedad) );
+    if(resultadoHumedad > 100.0){
+        printf("\nAtributo humedad:[%f] del registro id:[%d] atipico\n",pDatoClimatico->humedad,pDatoClimatico->id);
+        return true;
+    }    
+    //presion
+    float promedioPresion = getPromedioAtributosFloat("presion");
+    float resultadoPresion = abs(promedioPresion - (pDatoClimatico->presion) );
+    if(resultadoPresion > 100.0){
+        printf("\nAtributo presion:[%f] del registro id:[%d] atipico\n",pDatoClimatico->presion,pDatoClimatico->id);
+        return true;
+    }
+
+    //velocidad del viento 
+    int promedioVelcdViento = getPromedioAtributosInt("velcdViento");
+    int resultadoVelcdViento = abs(promedioVelcdViento - (pDatoClimatico->velcdViento) );
+    if(resultadoVelcdViento > 100){
+        printf("\nAtributo velocidad del viento:[%d] del registro id:[%d] atipico\n",pDatoClimatico->velcdViento,pDatoClimatico->id);
+        return true;
+    } 
+    //precipitacion
+    int promedioPrecipitacion = getPromedioAtributosInt("precipitacion");
+    int resultadoPrecipitacion = abs(promedioPrecipitacion - (pDatoClimatico->precipitacion) );
+    if(resultadoPrecipitacion > 100){
+        printf("\nAtributo precipitacion:[%d] del registro id:[%d] atipico\n",pDatoClimatico->precipitacion,pDatoClimatico->id);
+        return true;
+    } 
+    return false;
 }
 /** 
  * Se encarga de gestionar el menú de procesamiento de datos del sistema

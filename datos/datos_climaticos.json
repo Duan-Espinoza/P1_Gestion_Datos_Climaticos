@@ -10,17 +10,6 @@
 		"dirViento":	"W",
 		"precipitacion":	2
 	}, {
-		"id":	2,
-		"region":	"Norte",
-		"fecha":	"2023-05-01",
-		"hora":	"08:00",
-		"humedad":	60,
-		"presion":	1011,
-		"velcdViento":	20,
-		"dirViento":	"NW",
-		"precipitacion":	0,
-		"temperatura":	16.75
-	}, {
 		"id":	3,
 		"region":	"Norte",
 		"fecha":	"2024-03-11",
