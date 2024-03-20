@@ -6,7 +6,9 @@
 
 #include <stdio.h>
 #include "headers/gestion_regiones.h"
-//#include "headers/correlacion.h"
+#include "headers/correlacion.h"
+#include "headers/procesamiento_datos.h"
+#include "headers/gestion_datos_climaticos.h"
 
 // Función para mostrar el menú y obtener la opción del usuario
 int mostrarMenu() {
