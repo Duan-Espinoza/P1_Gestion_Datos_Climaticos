@@ -205,8 +205,7 @@ void menuCorrelacion() {
     do {
         printf("\n===== Menú de Correlación =====\n");
         printf("1. Seleccionar parámetros de correlación\n");
-        printf("2. Calcular correlación\n");
-        printf("3. Salir al menú principal\n");
+        printf("2. Salir al menú principal\n");
         printf("Ingrese la opción deseada: ");
         scanf("%d", &opcion);
 
@@ -215,16 +214,13 @@ void menuCorrelacion() {
                 seleccionarParametrosCorrelacion();
                 break;
             case 2:
-                calcularCorrelacion();
-                break;
-            case 3:
                 printf("Volviendo al menú principal...\n");
                 break;
             default:
                 printf("Opción no válida. Por favor, seleccione una opción válida.\n");
                 break;
         }
-    } while (opcion != 3);
+    } while (opcion != 2);
 }
 
 //Se requiere una funcionalidad previa que filtre los datos obtenidos de daatos_climaticos,json
